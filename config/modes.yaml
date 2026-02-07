@@ -1,0 +1,24 @@
+modes:
+  - id: rapid-prototype
+    name: Rapid Prototype
+    description: Fast iteration with minimal mock data. Best for quick concept validation.
+    defaultViewport: desktop
+    mockDataStyle: minimal
+
+  - id: mobile-first
+    name: Mobile First
+    description: Mobile-optimized designs with touch-friendly interactions.
+    defaultViewport: mobile
+    mockDataStyle: minimal
+
+  - id: data-heavy
+    name: Data Heavy
+    description: Rich datasets with tables, charts, and advanced filtering.
+    defaultViewport: desktop
+    mockDataStyle: extensive
+
+  - id: presentation
+    name: Presentation
+    description: High-polish designs for demos and presentations.
+    defaultViewport: desktop
+    mockDataStyle: realistic
