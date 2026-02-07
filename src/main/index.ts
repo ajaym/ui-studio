@@ -65,14 +65,13 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
-  // Clean up
+  // Clean up preview server
   if (previewServer) {
     previewServer.stop()
   }
 
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  // Always quit - this is a dev tool, not a traditional Mac app
+  app.quit()
 })
 
 async function initializeServices() {
@@ -144,6 +143,12 @@ function setupIPC() {
 
       // Send message to agent
       await agentService.sendMessage(payload.message, images)
+
+      // Reload preview after agent completes to ensure all file changes are reflected
+      // (HMR can miss updates when new files are created mid-session)
+      setTimeout(() => {
+        mainWindow?.webContents.send(IPCChannel.PREVIEW_RELOAD)
+      }, 500)
 
       return { success: true }
     } catch (error) {
