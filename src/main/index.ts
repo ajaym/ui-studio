@@ -154,27 +154,14 @@ function setupIPC() {
     }
   })
 
-  // Mode handlers
+  // Mode handlers (placeholder - not yet implemented)
   ipcMain.handle(IPCChannel.MODE_CHANGE, async (_, payload: ModeChangePayload) => {
     console.log('Mode changed to:', payload.modeId)
-    // TODO: Implement mode switching
     return { success: true }
   })
 
   ipcMain.handle(IPCChannel.MODE_LIST, async () => {
-    // TODO: Load modes from config
     return []
-  })
-
-  // Config handlers
-  ipcMain.handle(IPCChannel.CONFIG_GET, async (_, key: string) => {
-    // TODO: Implement config management
-    return null
-  })
-
-  ipcMain.handle(IPCChannel.CONFIG_SET, async (_, key: string, value: unknown) => {
-    // TODO: Implement config management
-    return { success: true }
   })
 }
 

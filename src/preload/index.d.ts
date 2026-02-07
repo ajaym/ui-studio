@@ -22,10 +22,6 @@ export interface ElectronAPI {
     change: (payload: ModeChangePayload) => Promise<{ success: boolean }>
     list: () => Promise<AgentMode[]>
   }
-  config: {
-    get: (key: string) => Promise<unknown>
-    set: (key: string, value: unknown) => Promise<void>
-  }
 }
 
 declare global {

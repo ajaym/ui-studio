@@ -65,14 +65,6 @@ const api = {
       ipcRenderer.invoke(IPCChannel.MODE_LIST),
   },
 
-  // Config API
-  config: {
-    get: (key: string): Promise<unknown> =>
-      ipcRenderer.invoke(IPCChannel.CONFIG_GET, key),
-
-    set: (key: string, value: unknown): Promise<void> =>
-      ipcRenderer.invoke(IPCChannel.CONFIG_SET, key, value),
-  },
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

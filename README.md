@@ -20,8 +20,6 @@ UI Studio is an Electron-based desktop application that enables designers and PM
 
 - **Node.js** v20 or higher
 - **Anthropic API Key** - Get one at https://console.anthropic.com/settings/keys
-  - Same billing as Claude Code
-  - See [SETUP_API_KEY.md](./SETUP_API_KEY.md) for detailed instructions
 
 ## Installation
 
@@ -67,53 +65,14 @@ ui-studio/
 │   ├── preload/           # Electron preload scripts
 │   └── shared/            # Shared types and utilities
 ├── prototypes/            # Generated prototypes (git-ignored)
-├── config/                # Configuration files
-└── mcp-server/            # Mock MCP server for testing
+└── config/                # Configuration files
 ```
 
 ## Configuration
 
-### Agent Configuration
+Agent settings (model, temperature, max tokens) are defined in `src/shared/constants.ts`.
 
-Create `config/agent-config.json`:
-
-```json
-{
-  "model": "claude-sonnet-4-5-20250929",
-  "temperature": 0.7,
-  "maxTokens": 8192
-}
-```
-
-### MCP Servers
-
-Configure design system MCP servers in `config/mcp-servers.json`:
-
-```json
-{
-  "servers": [
-    {
-      "name": "design-system-docs",
-      "command": "node",
-      "args": ["path/to/mcp-server.js"],
-      "env": {}
-    }
-  ]
-}
-```
-
-### Modes
-
-Configure different prototype modes in `config/modes.yaml`:
-
-```yaml
-modes:
-  - id: rapid-prototype
-    name: Rapid Prototype
-    description: Fast iteration with minimal mock data
-    defaultViewport: desktop
-    mockDataStyle: minimal
-```
+Prototype modes are configured in `config/modes.yaml`.
 
 ## Usage
 
@@ -145,13 +104,13 @@ modes:
 
 ## Roadmap
 
-- [x] Basic chat interface
-- [x] Live preview panel
-- [ ] Agent SDK integration
-- [ ] Custom agent tools (file operations, mock data)
+- [x] Chat interface with multimodal input
+- [x] Live preview panel with viewport controls
+- [x] Agent integration (Anthropic SDK)
+- [x] Custom agent tools (write_file, create_page, mock data)
+- [x] Multi-page support with auto-routing
+- [x] Configurable modes (rapid, mobile-first, data-heavy, presentation)
 - [ ] MCP integration for design systems
-- [ ] Multi-page support
-- [ ] Configurable modes
 - [ ] Version history
 - [ ] Export functionality
 - [ ] Local network sharing

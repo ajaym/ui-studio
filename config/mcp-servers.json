@@ -1,11 +1,3 @@
 {
-  "servers": [
-    {
-      "name": "mock-design-system",
-      "command": "node",
-      "args": ["mcp-server/mock-design-system.js"],
-      "env": {},
-      "description": "Mock design system MCP server for testing"
-    }
-  ]
+  "servers": []
 }
