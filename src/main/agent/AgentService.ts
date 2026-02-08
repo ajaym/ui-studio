@@ -77,7 +77,7 @@ export class AgentService {
           max_tokens: 8192,
           system: systemPrompt,
           messages: this.conversationHistory,
-          tools: getTools(this.currentProjectId || ''),
+          tools: getTools(),
         })
 
         // Add assistant response to history

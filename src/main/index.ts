@@ -6,7 +6,7 @@ import { IPCChannel } from '@shared/types'
 import type { ChatSendPayload, ModeChangePayload } from '@shared/types'
 import { AgentService } from './agent/AgentService'
 import { ProjectManager } from './project/ProjectManager'
-import { PreviewServer } from './preview/PreviewServer'
+import { StaticServer } from './preview/StaticServer'
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url)
@@ -18,7 +18,7 @@ dotenvConfig({ path: join(process.cwd(), '.env') })
 let mainWindow: BrowserWindow | null = null
 let agentService: AgentService | null = null
 let projectManager: ProjectManager | null = null
-let previewServer: PreviewServer | null = null
+let staticServer: StaticServer | null = null
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -65,9 +65,9 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
-  // Clean up preview server
-  if (previewServer) {
-    previewServer.stop()
+  // Clean up static server
+  if (staticServer) {
+    staticServer.stop()
   }
 
   // Always quit - this is a dev tool, not a traditional Mac app
@@ -78,8 +78,8 @@ async function initializeServices() {
   // Initialize project manager
   projectManager = new ProjectManager()
 
-  // Initialize preview server
-  previewServer = new PreviewServer()
+  // Initialize static server
+  staticServer = new StaticServer()
 
   // Initialize agent service
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -118,15 +118,9 @@ function setupIPC() {
         project = projectManager.createProject('New Prototype')
         console.log('Created new project:', project.id)
 
-        // Install dependencies
-        console.log('Installing dependencies...')
-        await previewServer!.installDependencies(project.path)
-        console.log('Dependencies installed')
-
-        // Start preview server
-        console.log('Starting preview server...')
-        const previewUrl = await previewServer!.start(project.path)
-        console.log('Preview server started:', previewUrl)
+        // Start static server (synchronous, no npm install needed)
+        const previewUrl = staticServer!.start(project.path)
+        console.log('Static server started:', previewUrl)
 
         // Send preview URL to renderer
         mainWindow?.webContents.send(IPCChannel.PREVIEW_URL, previewUrl)
@@ -144,8 +138,7 @@ function setupIPC() {
       // Send message to agent
       await agentService.sendMessage(payload.message, images)
 
-      // Reload preview after agent completes to ensure all file changes are reflected
-      // (HMR can miss updates when new files are created mid-session)
+      // Reload preview after agent completes
       setTimeout(() => {
         mainWindow?.webContents.send(IPCChannel.PREVIEW_RELOAD)
       }, 500)
