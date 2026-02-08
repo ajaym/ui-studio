@@ -18,8 +18,8 @@ function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-100">
-      {/* Header */}
-      <header className="h-12 bg-white border-b flex items-center px-4 flex-shrink-0">
+      {/* Header - draggable title bar with space for macOS traffic lights */}
+      <header className="header-drag-region h-12 bg-white border-b flex items-center pr-4 flex-shrink-0" style={{ paddingLeft: '84px' }}>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">UI</span>
