@@ -104,12 +104,26 @@ export class StaticServer {
   private killProcessOnPort(port: number) {
     const myPid = process.pid
     try {
-      const result = execSync(`lsof -ti:${port}`, { encoding: 'utf-8' }).trim()
+      let result: string
+      if (process.platform === 'win32') {
+        // Windows: use netstat to find PIDs on the port
+        const raw = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, {
+          encoding: 'utf-8',
+        }).trim()
+        // Each line ends with the PID
+        const pids = raw
+          .split('\n')
+          .map((line) => parseInt(line.trim().split(/\s+/).pop() || '', 10))
+          .filter((pid) => !isNaN(pid))
+        result = pids.join('\n')
+      } else {
+        result = execSync(`lsof -ti:${port}`, { encoding: 'utf-8' }).trim()
+      }
       if (result) {
         const pids = result.split('\n')
         for (const pid of pids) {
           const numPid = parseInt(pid, 10)
-          if (numPid === myPid) continue // Never kill ourselves
+          if (isNaN(numPid) || numPid === myPid) continue
           try {
             process.kill(numPid, 'SIGKILL')
           } catch { /* already dead */ }

@@ -1,0 +1,62 @@
+appId: com.ui-studio.app
+productName: UI Studio
+copyright: Copyright (c) 2026 UI Studio Team
+
+directories:
+  buildResources: build
+  output: dist
+
+files:
+  - out/**/*
+  - package.json
+  - "!src/**"
+  - "!electron.vite.config.*"
+  - "!tsconfig*"
+  - "!tailwind.config.*"
+  - "!postcss.config.*"
+
+afterPack: build/afterPack.cjs
+
+asar: true
+asarUnpack:
+  - "resources/**"
+
+# ── macOS ────────────────────────────────
+mac:
+  icon: build/icon.png
+  category: public.app-category.developer-tools
+  identity: null
+  target:
+    - target: dmg
+      arch:
+        - arm64
+
+dmg:
+  artifactName: "${productName}-${version}-arm64.${ext}"
+
+# ── Windows ──────────────────────────────
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  artifactName: "${productName}-Setup-${version}.${ext}"
+
+# ── Linux ────────────────────────────────
+linux:
+  icon: build/icon.png
+  category: Development
+  target:
+    - target: AppImage
+      arch:
+        - x64
+
+appImage:
+  artifactName: "${productName}-${version}.${ext}"
