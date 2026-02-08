@@ -1,11 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'fs'
-import { join, dirname } from 'path'
-import { PROTOTYPE_DIR } from '@shared/constants'
-
-function getPrototypePath(projectId: string, filePath: string): string {
-  return join(process.cwd(), PROTOTYPE_DIR, projectId, filePath)
-}
+import { dirname } from 'path'
+import { getPrototypePath } from '@shared/constants'
 
 export function getTools(): Anthropic.Tool[] {
   return [

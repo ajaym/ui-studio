@@ -8,6 +8,9 @@ dist/
 dist-electron/
 out/
 
+# electron-builder build resources (keep icon files tracked)
+# build/ directory is used for electron-builder icons/assets
+
 # Generated prototypes
 prototypes/
 

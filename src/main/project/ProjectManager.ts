@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs'
 import { join } from 'path'
-import { PROTOTYPE_DIR } from '@shared/constants'
+import { getPrototypesDir, getPrototypePath as resolvePrototypePath } from '@shared/constants'
 import type { Project } from '@shared/types'
 
 export class ProjectManager {
@@ -15,7 +15,7 @@ export class ProjectManager {
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace(/[T:]/g, '-')
     const id = `${slug}-${timestamp}`
-    const projectPath = join(process.cwd(), PROTOTYPE_DIR, id)
+    const projectPath = resolvePrototypePath(id)
 
     // Create project directory
     mkdirSync(projectPath, { recursive: true })
@@ -86,11 +86,11 @@ export class ProjectManager {
   }
 
   getProjectPath(projectId: string): string {
-    return join(process.cwd(), PROTOTYPE_DIR, projectId)
+    return resolvePrototypePath(projectId)
   }
 
   listProjects(): Project[] {
-    const prototypesDir = join(process.cwd(), PROTOTYPE_DIR)
+    const prototypesDir = getPrototypesDir()
     if (!existsSync(prototypesDir)) {
       return []
     }

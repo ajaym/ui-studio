@@ -2,7 +2,9 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { config as dotenvConfig } from 'dotenv'
+import { existsSync } from 'fs'
 import { IPCChannel } from '@shared/types'
+import { getAppDataDir } from '@shared/constants'
 import type { ChatSendPayload, ModeChangePayload } from '@shared/types'
 import { AgentService } from './agent/AgentService'
 import { ProjectManager } from './project/ProjectManager'
@@ -12,8 +14,18 @@ import { StaticServer } from './preview/StaticServer'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// Load environment variables from .env file
-dotenvConfig({ path: join(process.cwd(), '.env') })
+// Load environment variables from .env file.
+// In a packaged app, check next to the executable first, then userData dir.
+const envCandidates = [
+  join(process.cwd(), '.env'),
+  join(getAppDataDir(), '.env'),
+]
+for (const envPath of envCandidates) {
+  if (existsSync(envPath)) {
+    dotenvConfig({ path: envPath })
+    break
+  }
+}
 
 let mainWindow: BrowserWindow | null = null
 let agentService: AgentService | null = null
