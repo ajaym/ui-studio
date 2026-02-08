@@ -36,17 +36,11 @@ Pre-built binaries are available on the [Releases](../../releases) page:
 
 1. Download the file for your platform from [Releases](../../releases)
 2. Open/install the app (see [INSTALL.md](INSTALL.md) for detailed steps)
-3. Set your API key as an environment variable before launching, or place a `.env` file in the app's data directory:
+3. Launch UI Studio
+4. Open **Settings** (gear icon in the header) and enter your Anthropic API key
+5. Start describing your UI in the chat panel
 
-```bash
-# macOS / Linux — set before launching
-export ANTHROPIC_API_KEY=your_api_key_here
-
-# Or create a .env file (macOS example):
-echo "ANTHROPIC_API_KEY=your_api_key_here" > ~/Library/Application\ Support/UI\ Studio/.env
-```
-
-4. Launch UI Studio and start describing your UI in the chat panel
+> **Alternative:** You can also provide the key via the `ANTHROPIC_API_KEY` environment variable or a `.env` file in the app's data directory. The in-app setting takes effect immediately and persists across sessions.
 
 ## Development Setup
 
@@ -58,11 +52,12 @@ If you want to run from source or contribute:
 # Install dependencies
 npm install
 
-# Set your API key
-export ANTHROPIC_API_KEY=your_api_key_here
-
 # Start development server with hot reload
 npm run dev
+
+# Set your API key via the in-app Settings screen (gear icon),
+# or export it as an environment variable:
+# export ANTHROPIC_API_KEY=your_api_key_here
 ```
 
 ## Building Distributables
@@ -141,7 +136,7 @@ Prototype modes are configured in `config/modes.yaml`.
 - [x] Multi-page support with auto-routing
 - [x] Configurable modes (rapid, mobile-first, data-heavy, presentation)
 - [x] Downloadable executables (electron-builder)
-- [ ] In-app API key settings screen
+- [x] In-app API key settings screen
 - [ ] MCP integration for design systems
 - [ ] Version history
 - [ ] Export functionality
