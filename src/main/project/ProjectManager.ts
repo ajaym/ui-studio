@@ -1,6 +1,5 @@
 import { mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { nanoid } from 'nanoid'
 import { PROTOTYPE_DIR } from '@shared/constants'
 
 export interface Project {
@@ -14,7 +13,14 @@ export class ProjectManager {
   private currentProject: Project | null = null
 
   createProject(name: string): Project {
-    const id = nanoid()
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40)
+    const now = new Date()
+    const timestamp = now.toISOString().slice(0, 19).replace(/[T:]/g, '-')
+    const id = `${slug}-${timestamp}`
     const projectPath = join(process.cwd(), PROTOTYPE_DIR, id)
 
     // Create project directory

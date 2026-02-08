@@ -115,7 +115,8 @@ function setupIPC() {
       // Create project if this is the first message
       let project = projectManager.getCurrentProject()
       if (!project) {
-        project = projectManager.createProject('New Prototype')
+        const projectName = await agentService.generateProjectName(payload.message)
+        project = projectManager.createProject(projectName)
         console.log('Created new project:', project.id)
 
         // Start static server (synchronous, no npm install needed)

@@ -172,6 +172,29 @@ export class AgentService {
     }
   }
 
+  async generateProjectName(userMessage: string): Promise<string> {
+    try {
+      const response = await this.client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 30,
+        messages: [
+          {
+            role: 'user',
+            content: `Give a short 2-4 word name for a UI prototype based on this request. Reply with ONLY the name, nothing else.\n\n"${userMessage}"`,
+          },
+        ],
+      })
+
+      const text = response.content[0]
+      if (text.type === 'text') {
+        return text.text.trim()
+      }
+    } catch (error) {
+      console.error('Failed to generate project name:', error)
+    }
+    return 'prototype'
+  }
+
   clearHistory() {
     this.conversationHistory = []
   }
