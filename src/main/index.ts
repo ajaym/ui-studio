@@ -111,7 +111,7 @@ function setupIPC() {
     console.log('Received chat message:', payload.message)
 
     if (!agentService) {
-      const errorMsg = 'Agent service not initialized. Please set ANTHROPIC_API_KEY.'
+      const errorMsg = 'API key not configured. Please open Settings (gear icon) to add your Anthropic API key.'
       mainWindow?.webContents.send(IPCChannel.CHAT_ERROR, errorMsg)
       return { success: false, error: errorMsg }
     }

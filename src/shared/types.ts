@@ -65,7 +65,6 @@ export enum IPCChannel {
   PROJECT_CREATE = 'project:create',
   PROJECT_CHANGED = 'project:changed',
 
-  APIKEY_GET = 'apikey:get',
   APIKEY_SET = 'apikey:set',
   APIKEY_STATUS = 'apikey:status',
 }
