@@ -63,7 +63,7 @@ UI Studio needs your Anthropic API key to work. Choose whichever method is easie
 2. Paste this command, replacing `your_key_here` with the key you copied in Step 1:
 
 ```
-echo "ANTHROPIC_API_KEY=your_key_here" > ~/Library/Application\ Support/UI\ Studio/.env
+echo "ANTHROPIC_API_KEY=your_key_here" > ~/Library/Application\ Support/ui-studio/.env
 ```
 
 3. Press Enter

@@ -15,6 +15,8 @@ files:
   - "!tailwind.config.*"
   - "!postcss.config.*"
 
+afterPack: build/afterPack.cjs
+
 asar: true
 asarUnpack:
   - "resources/**"
@@ -23,6 +25,7 @@ asarUnpack:
 mac:
   icon: build/icon.png
   category: public.app-category.developer-tools
+  identity: null
   target:
     - target: dmg
       arch:
