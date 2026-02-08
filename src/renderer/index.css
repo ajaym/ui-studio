@@ -12,6 +12,18 @@
   }
 }
 
+@layer components {
+  .header-drag-region {
+    -webkit-app-region: drag;
+  }
+
+  .header-drag-region button,
+  .header-drag-region a,
+  .header-drag-region input {
+    -webkit-app-region: no-drag;
+  }
+}
+
 @layer utilities {
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
