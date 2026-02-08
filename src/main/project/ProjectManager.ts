@@ -1,13 +1,7 @@
-import { mkdirSync, writeFileSync } from 'fs'
+import { mkdirSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs'
 import { join } from 'path'
 import { PROTOTYPE_DIR } from '@shared/constants'
-
-export interface Project {
-  id: string
-  name: string
-  createdAt: number
-  path: string
-}
+import type { Project } from '@shared/types'
 
 export class ProjectManager {
   private currentProject: Project | null = null
@@ -87,7 +81,71 @@ export class ProjectManager {
     return this.currentProject
   }
 
+  setCurrentProject(project: Project | null) {
+    this.currentProject = project
+  }
+
   getProjectPath(projectId: string): string {
     return join(process.cwd(), PROTOTYPE_DIR, projectId)
+  }
+
+  listProjects(): Project[] {
+    const prototypesDir = join(process.cwd(), PROTOTYPE_DIR)
+    if (!existsSync(prototypesDir)) {
+      return []
+    }
+
+    const entries = readdirSync(prototypesDir, { withFileTypes: true })
+    const projects: Project[] = []
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+
+      const projectPath = join(prototypesDir, entry.name)
+      const hasIndex = existsSync(join(projectPath, 'index.html'))
+      const hasApp = existsSync(join(projectPath, 'app.jsx'))
+
+      if (!hasIndex || !hasApp) continue
+
+      // Use directory creation time as createdAt
+      const stats = statSync(projectPath)
+
+      // Parse name from directory slug: strip trailing timestamp (-YYYY-MM-DD-HH-MM-SS)
+      const nameSlug = entry.name.replace(/-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/, '')
+      const name = nameSlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+      projects.push({
+        id: entry.name,
+        name,
+        createdAt: stats.birthtimeMs,
+        path: projectPath,
+      })
+    }
+
+    // Sort newest first
+    projects.sort((a, b) => b.createdAt - a.createdAt)
+    return projects
+  }
+
+  openProject(projectId: string): Project {
+    const projectPath = this.getProjectPath(projectId)
+    if (!existsSync(projectPath)) {
+      throw new Error(`Project not found: ${projectId}`)
+    }
+
+    // Parse name from directory slug
+    const nameSlug = projectId.replace(/-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/, '')
+    const name = nameSlug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+    const stats = statSync(projectPath)
+    const project: Project = {
+      id: projectId,
+      name,
+      createdAt: stats.birthtimeMs,
+      path: projectPath,
+    }
+
+    this.currentProject = project
+    return project
   }
 }

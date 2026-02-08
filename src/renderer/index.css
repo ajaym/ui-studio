@@ -19,7 +19,8 @@
 
   .header-drag-region button,
   .header-drag-region a,
-  .header-drag-region input {
+  .header-drag-region input,
+  .header-no-drag {
     -webkit-app-region: no-drag;
   }
 }

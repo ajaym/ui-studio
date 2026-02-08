@@ -23,7 +23,15 @@ export class StaticServer {
   private projectPath: string | null = null
 
   start(projectPath: string): string {
-    this.stop()
+    // If server is already running, just switch the project path —
+    // the request handler reads this.projectPath dynamically
+    if (this.server) {
+      this.projectPath = projectPath
+      const url = `http://localhost:${PREVIEW_PORT}`
+      console.log(`[Static Server] Serving ${projectPath} at ${url}`)
+      return url
+    }
+
     this.killProcessOnPort(PREVIEW_PORT)
     this.projectPath = projectPath
 
@@ -73,6 +81,10 @@ export class StaticServer {
     return url
   }
 
+  clearProject() {
+    this.projectPath = null
+  }
+
   stop() {
     if (this.server) {
       this.server.close()
@@ -90,13 +102,16 @@ export class StaticServer {
   }
 
   private killProcessOnPort(port: number) {
+    const myPid = process.pid
     try {
       const result = execSync(`lsof -ti:${port}`, { encoding: 'utf-8' }).trim()
       if (result) {
         const pids = result.split('\n')
         for (const pid of pids) {
+          const numPid = parseInt(pid, 10)
+          if (numPid === myPid) continue // Never kill ourselves
           try {
-            process.kill(parseInt(pid, 10), 'SIGKILL')
+            process.kill(numPid, 'SIGKILL')
           } catch { /* already dead */ }
         }
         console.log(`[Static Server] Killed stale process(es) on port ${port}`)

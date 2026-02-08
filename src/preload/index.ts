@@ -6,6 +6,8 @@ import type {
   ChatStreamPayload,
   ModeChangePayload,
   AgentMode,
+  Project,
+  ProjectChangedPayload,
 } from '@shared/types'
 
 // Expose protected methods that allow the renderer process to use
@@ -63,6 +65,24 @@ const api = {
 
     list: (): Promise<AgentMode[]> =>
       ipcRenderer.invoke(IPCChannel.MODE_LIST),
+  },
+
+  // Project API
+  project: {
+    list: (): Promise<Project[]> =>
+      ipcRenderer.invoke(IPCChannel.PROJECT_LIST),
+
+    open: (projectId: string): Promise<void> =>
+      ipcRenderer.invoke(IPCChannel.PROJECT_OPEN, projectId),
+
+    create: (): Promise<void> =>
+      ipcRenderer.invoke(IPCChannel.PROJECT_CREATE),
+
+    onChanged: (callback: (payload: ProjectChangedPayload) => void) => {
+      const listener = (_: unknown, payload: ProjectChangedPayload) => callback(payload)
+      ipcRenderer.on(IPCChannel.PROJECT_CHANGED, listener)
+      return () => ipcRenderer.removeListener(IPCChannel.PROJECT_CHANGED, listener)
+    },
   },
 
 }

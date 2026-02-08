@@ -4,6 +4,8 @@ import type {
   ChatStreamPayload,
   ModeChangePayload,
   AgentMode,
+  Project,
+  ProjectChangedPayload,
 } from '@shared/types'
 
 export interface ElectronAPI {
@@ -21,6 +23,12 @@ export interface ElectronAPI {
   mode: {
     change: (payload: ModeChangePayload) => Promise<{ success: boolean }>
     list: () => Promise<AgentMode[]>
+  }
+  project: {
+    list: () => Promise<Project[]>
+    open: (projectId: string) => Promise<void>
+    create: () => Promise<void>
+    onChanged: (callback: (payload: ProjectChangedPayload) => void) => () => void
   }
 }
 

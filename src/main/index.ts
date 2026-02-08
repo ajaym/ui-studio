@@ -128,6 +128,12 @@ function setupIPC() {
 
         // Initialize agent for this project
         await agentService.initialize('rapid-prototype', project.id)
+
+        // Notify renderer of project change
+        mainWindow?.webContents.send(IPCChannel.PROJECT_CHANGED, {
+          project,
+          previewUrl,
+        })
       }
 
       // Process images if attached
@@ -151,6 +157,57 @@ function setupIPC() {
       mainWindow?.webContents.send(IPCChannel.CHAT_ERROR, errorMsg)
       return { success: false, error: errorMsg }
     }
+  })
+
+  // Project handlers
+  ipcMain.handle(IPCChannel.PROJECT_LIST, async () => {
+    if (!projectManager) return []
+    return projectManager.listProjects()
+  })
+
+  ipcMain.handle(IPCChannel.PROJECT_OPEN, async (_, projectId: string) => {
+    if (!projectManager || !staticServer) return
+
+    const project = projectManager.openProject(projectId)
+
+    // Switch static server to new project path
+    const previewUrl = staticServer.start(project.path)
+    console.log('Switched to project:', project.id, 'at', previewUrl)
+
+    // Re-initialize agent for this project
+    if (agentService) {
+      await agentService.initialize('rapid-prototype', project.id)
+    }
+
+    // Notify renderer and reload preview iframe
+    mainWindow?.webContents.send(IPCChannel.PROJECT_CHANGED, {
+      project,
+      previewUrl,
+    })
+    mainWindow?.webContents.send(IPCChannel.PREVIEW_RELOAD)
+  })
+
+  ipcMain.handle(IPCChannel.PROJECT_CREATE, async () => {
+    if (!projectManager) return
+
+    // Reset state so next CHAT_SEND creates a fresh project
+    projectManager.setCurrentProject(null)
+
+    // Clear project path — keep server running to avoid port kill issues
+    if (staticServer) {
+      staticServer.clearProject()
+    }
+
+    // Clear agent history
+    if (agentService) {
+      agentService.clearHistory()
+    }
+
+    // Notify renderer
+    mainWindow?.webContents.send(IPCChannel.PROJECT_CHANGED, {
+      project: null,
+      previewUrl: null,
+    })
   })
 
   // Mode handlers (placeholder - not yet implemented)

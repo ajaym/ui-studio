@@ -1,3 +1,11 @@
+// Project types
+export interface Project {
+  id: string
+  name: string
+  createdAt: number
+  path: string
+}
+
 // Message types
 export interface Message {
   id: string
@@ -51,6 +59,11 @@ export enum IPCChannel {
 
   MODE_CHANGE = 'mode:change',
   MODE_LIST = 'mode:list',
+
+  PROJECT_LIST = 'project:list',
+  PROJECT_OPEN = 'project:open',
+  PROJECT_CREATE = 'project:create',
+  PROJECT_CHANGED = 'project:changed',
 }
 
 // IPC payload types
@@ -71,4 +84,9 @@ export interface ChatStreamPayload {
 
 export interface ModeChangePayload {
   modeId: string
+}
+
+export interface ProjectChangedPayload {
+  project: Project | null
+  previewUrl: string | null
 }
