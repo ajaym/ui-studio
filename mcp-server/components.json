@@ -1,0 +1,238 @@
+{
+  "Button": {
+    "description": "Primary button component with variants and sizes",
+    "category": "Actions",
+    "props": {
+      "variant": {
+        "type": "enum",
+        "values": ["primary", "secondary", "outline", "ghost", "danger"],
+        "default": "primary"
+      },
+      "size": {
+        "type": "enum",
+        "values": ["sm", "md", "lg"],
+        "default": "md"
+      },
+      "disabled": {
+        "type": "boolean",
+        "default": false
+      },
+      "children": {
+        "type": "ReactNode",
+        "required": true
+      }
+    },
+    "example": "<Button variant=\"primary\" size=\"md\">Click me</Button>"
+  },
+  "Card": {
+    "description": "Container component with padding and shadow",
+    "category": "Layout",
+    "props": {
+      "padding": {
+        "type": "enum",
+        "values": ["none", "sm", "md", "lg"],
+        "default": "md"
+      },
+      "shadow": {
+        "type": "boolean",
+        "default": true
+      },
+      "children": {
+        "type": "ReactNode",
+        "required": true
+      }
+    },
+    "example": "<Card padding=\"md\" shadow>{content}</Card>"
+  },
+  "Input": {
+    "description": "Text input field with label and validation",
+    "category": "Forms",
+    "props": {
+      "label": {
+        "type": "string"
+      },
+      "type": {
+        "type": "enum",
+        "values": ["text", "email", "password", "number", "tel"],
+        "default": "text"
+      },
+      "placeholder": {
+        "type": "string"
+      },
+      "error": {
+        "type": "string"
+      },
+      "disabled": {
+        "type": "boolean",
+        "default": false
+      },
+      "required": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "example": "<Input label=\"Email\" type=\"email\" placeholder=\"you@example.com\" />"
+  },
+  "Table": {
+    "description": "Data table with sorting and pagination",
+    "category": "Data Display",
+    "props": {
+      "columns": {
+        "type": "array",
+        "description": "Array of column definitions with key, label, and optional render function",
+        "required": true
+      },
+      "data": {
+        "type": "array",
+        "description": "Array of data objects",
+        "required": true
+      },
+      "sortable": {
+        "type": "boolean",
+        "default": false
+      },
+      "pagination": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "example": "<Table columns={columns} data={data} sortable pagination />"
+  },
+  "Modal": {
+    "description": "Overlay dialog for focused content",
+    "category": "Overlay",
+    "props": {
+      "isOpen": {
+        "type": "boolean",
+        "required": true
+      },
+      "onClose": {
+        "type": "function",
+        "required": true
+      },
+      "title": {
+        "type": "string"
+      },
+      "size": {
+        "type": "enum",
+        "values": ["sm", "md", "lg", "xl"],
+        "default": "md"
+      },
+      "children": {
+        "type": "ReactNode",
+        "required": true
+      }
+    },
+    "example": "<Modal isOpen={isOpen} onClose={handleClose} title=\"Edit User\">{content}</Modal>"
+  },
+  "Navbar": {
+    "description": "Navigation bar with logo and menu items",
+    "category": "Navigation",
+    "props": {
+      "logo": {
+        "type": "ReactNode"
+      },
+      "items": {
+        "type": "array",
+        "description": "Array of navigation items with label and href"
+      },
+      "actions": {
+        "type": "ReactNode",
+        "description": "Right-side actions (e.g., user menu)"
+      }
+    },
+    "example": "<Navbar logo={<Logo />} items={navItems} actions={<UserMenu />} />"
+  },
+  "Sidebar": {
+    "description": "Side navigation panel",
+    "category": "Navigation",
+    "props": {
+      "items": {
+        "type": "array",
+        "description": "Array of navigation items with label, icon, and href",
+        "required": true
+      },
+      "collapsed": {
+        "type": "boolean",
+        "default": false
+      },
+      "position": {
+        "type": "enum",
+        "values": ["left", "right"],
+        "default": "left"
+      }
+    },
+    "example": "<Sidebar items={sidebarItems} collapsed={false} />"
+  },
+  "Badge": {
+    "description": "Small status indicator or label",
+    "category": "Data Display",
+    "props": {
+      "variant": {
+        "type": "enum",
+        "values": ["default", "success", "warning", "danger", "info"],
+        "default": "default"
+      },
+      "size": {
+        "type": "enum",
+        "values": ["sm", "md", "lg"],
+        "default": "md"
+      },
+      "children": {
+        "type": "ReactNode",
+        "required": true
+      }
+    },
+    "example": "<Badge variant=\"success\">Active</Badge>"
+  },
+  "Avatar": {
+    "description": "User profile image with fallback initials",
+    "category": "Data Display",
+    "props": {
+      "src": {
+        "type": "string"
+      },
+      "alt": {
+        "type": "string"
+      },
+      "initials": {
+        "type": "string"
+      },
+      "size": {
+        "type": "enum",
+        "values": ["xs", "sm", "md", "lg", "xl"],
+        "default": "md"
+      }
+    },
+    "example": "<Avatar src={user.avatar} alt={user.name} initials=\"JD\" />"
+  },
+  "Select": {
+    "description": "Dropdown select input",
+    "category": "Forms",
+    "props": {
+      "label": {
+        "type": "string"
+      },
+      "options": {
+        "type": "array",
+        "description": "Array of {value, label} objects",
+        "required": true
+      },
+      "value": {
+        "type": "string"
+      },
+      "onChange": {
+        "type": "function",
+        "required": true
+      },
+      "placeholder": {
+        "type": "string"
+      },
+      "disabled": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "example": "<Select label=\"Status\" options={statusOptions} value={status} onChange={setStatus} />"
+  }
+}
