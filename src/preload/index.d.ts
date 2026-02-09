@@ -6,6 +6,8 @@ import type {
   AgentMode,
   Project,
   ProjectChangedPayload,
+  ApiKeyStatus,
+  ApiKeySetPayload,
 } from '@shared/types'
 
 export interface ElectronAPI {
@@ -29,6 +31,10 @@ export interface ElectronAPI {
     open: (projectId: string) => Promise<void>
     create: () => Promise<void>
     onChanged: (callback: (payload: ProjectChangedPayload) => void) => () => void
+  }
+  apiKey: {
+    getStatus: () => Promise<ApiKeyStatus>
+    set: (payload: ApiKeySetPayload) => Promise<{ success: boolean; error?: string }>
   }
 }
 

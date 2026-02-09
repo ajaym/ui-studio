@@ -64,6 +64,9 @@ export enum IPCChannel {
   PROJECT_OPEN = 'project:open',
   PROJECT_CREATE = 'project:create',
   PROJECT_CHANGED = 'project:changed',
+
+  APIKEY_SET = 'apikey:set',
+  APIKEY_STATUS = 'apikey:status',
 }
 
 // IPC payload types
@@ -89,4 +92,13 @@ export interface ModeChangePayload {
 export interface ProjectChangedPayload {
   project: Project | null
   previewUrl: string | null
+}
+
+export interface ApiKeyStatus {
+  isSet: boolean
+  maskedKey: string | null // e.g. "sk-ant-...abc123"
+}
+
+export interface ApiKeySetPayload {
+  apiKey: string
 }

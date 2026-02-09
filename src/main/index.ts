@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url'
 import { config as dotenvConfig } from 'dotenv'
 import { existsSync } from 'fs'
 import { IPCChannel } from '@shared/types'
-import { getAppDataDir } from '@shared/constants'
-import type { ChatSendPayload, ModeChangePayload } from '@shared/types'
+import { getAppDataDir, getSavedApiKey, saveApiKey, maskApiKey } from '@shared/constants'
+import type { ChatSendPayload, ModeChangePayload, ApiKeyStatus, ApiKeySetPayload } from '@shared/types'
 import { AgentService } from './agent/AgentService'
 import { ProjectManager } from './project/ProjectManager'
 import { StaticServer } from './preview/StaticServer'
@@ -93,12 +93,11 @@ async function initializeServices() {
   // Initialize static server
   staticServer = new StaticServer()
 
-  // Initialize agent service
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  // Initialize agent service — check env var first, then saved config
+  const apiKey = process.env.ANTHROPIC_API_KEY || getSavedApiKey()
   if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY environment variable not set')
-    console.log('Please set your API key: export ANTHROPIC_API_KEY=your_key_here')
-    // Continue anyway for UI testing
+    console.log('No API key found. Users can set it via Settings in the app.')
+    // Continue anyway — the settings screen will prompt them
   } else {
     agentService = new AgentService(apiKey)
     console.log('Agent service initialized')
@@ -112,7 +111,7 @@ function setupIPC() {
     console.log('Received chat message:', payload.message)
 
     if (!agentService) {
-      const errorMsg = 'Agent service not initialized. Please set ANTHROPIC_API_KEY.'
+      const errorMsg = 'API key not configured. Please open Settings (gear icon) to add your Anthropic API key.'
       mainWindow?.webContents.send(IPCChannel.CHAT_ERROR, errorMsg)
       return { success: false, error: errorMsg }
     }
@@ -230,6 +229,48 @@ function setupIPC() {
 
   ipcMain.handle(IPCChannel.MODE_LIST, async () => {
     return []
+  })
+
+  // API key handlers
+  ipcMain.handle(IPCChannel.APIKEY_STATUS, async (): Promise<ApiKeyStatus> => {
+    const envKey = process.env.ANTHROPIC_API_KEY
+    const savedKey = getSavedApiKey()
+    const activeKey = envKey || savedKey
+    return {
+      isSet: !!activeKey,
+      maskedKey: activeKey ? maskApiKey(activeKey) : null,
+    }
+  })
+
+  ipcMain.handle(IPCChannel.APIKEY_SET, async (_, payload: ApiKeySetPayload): Promise<{ success: boolean; error?: string }> => {
+    const { apiKey } = payload
+    if (!apiKey || !apiKey.trim()) {
+      return { success: false, error: 'API key cannot be empty' }
+    }
+
+    try {
+      // Validate by making a lightweight API call
+      const testClient = new (await import('@anthropic-ai/sdk')).default({ apiKey: apiKey.trim() })
+      await testClient.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 10,
+        messages: [{ role: 'user', content: 'Hi' }],
+      })
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error'
+      if (msg.includes('401') || msg.includes('auth') || msg.includes('invalid')) {
+        return { success: false, error: 'Invalid API key. Please check and try again.' }
+      }
+      // Non-auth errors (network, rate limit) — key format is likely fine
+      console.warn('API key validation warning (non-auth):', msg)
+    }
+
+    // Save and reinitialize
+    saveApiKey(apiKey.trim())
+    agentService = new AgentService(apiKey.trim())
+    console.log('Agent service reinitialized with new API key')
+
+    return { success: true }
   })
 }
 

@@ -8,6 +8,8 @@ import type {
   AgentMode,
   Project,
   ProjectChangedPayload,
+  ApiKeyStatus,
+  ApiKeySetPayload,
 } from '@shared/types'
 
 // Expose protected methods that allow the renderer process to use
@@ -83,6 +85,15 @@ const api = {
       ipcRenderer.on(IPCChannel.PROJECT_CHANGED, listener)
       return () => ipcRenderer.removeListener(IPCChannel.PROJECT_CHANGED, listener)
     },
+  },
+
+  // API Key API
+  apiKey: {
+    getStatus: (): Promise<ApiKeyStatus> =>
+      ipcRenderer.invoke(IPCChannel.APIKEY_STATUS),
+
+    set: (payload: ApiKeySetPayload): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke(IPCChannel.APIKEY_SET, payload),
   },
 
 }
