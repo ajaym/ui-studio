@@ -11,9 +11,56 @@ npm run build        # Build for production
 npm run typecheck    # Run TypeScript type checking
 npm run preview      # Preview production build
 
+# Testing
+npm run test:unit      # Main process unit tests (node env)
+npm run test:renderer  # React component tests (jsdom env)
+npm run test:e2e       # Playwright E2E tests (requires `npm run build` first)
+npm run test:all       # Run unit + renderer + E2E tests sequentially
+npm run test:watch     # Run tests in watch mode during development
+npm run test:coverage  # Run tests with code coverage report
+
 # Environment setup
 export ANTHROPIC_API_KEY=your_key_here  # Required for agent functionality
 ```
+
+## Testing Policy
+
+**Tests are mandatory for every change.** All unit and renderer tests must pass before any code is considered complete. Run `npm run test:unit && npm run test:renderer` to verify.
+
+### Test-Driven Development (TDD) for Features
+
+When implementing a new feature, follow this workflow:
+
+1. **Write failing tests first** — Create test cases that describe the expected behaviour of the feature before writing any implementation code.
+2. **Implement the feature** — Write the minimum code needed to make the tests pass.
+3. **Refactor** — Clean up the implementation while keeping all tests green.
+4. **Run the full suite** — `npm run test:unit && npm run test:renderer` must pass with zero failures.
+
+### Bug Fix Workflow
+
+When fixing a reported bug, follow this workflow:
+
+1. **Reproduce with a test** — Write a unit or component test that fails because of the bug. This proves the bug exists and defines the expected correct behaviour.
+2. **Fix the bug** — Change the source code so the failing test passes.
+3. **Verify no regressions** — Run `npm run test:unit && npm run test:renderer` to confirm all existing tests still pass.
+4. **Keep the regression test** — The new test stays in the suite permanently to prevent the bug from returning.
+
+### Test Structure
+
+- **Main process tests** (`src/**/*.test.ts`) — Run with `vitest.config.ts` (node environment). Mock `electron` and `@anthropic-ai/sdk`.
+- **Renderer tests** (`src/renderer/**/*.test.tsx`) — Run with `vitest.config.renderer.ts` (jsdom environment). Mock `window.electronAPI`.
+- **E2E tests** (`e2e/**/*.e2e.test.ts`) — Playwright with Electron. Require a production build (`npm run build`).
+- **Setup files**: `src/test-setup.ts` (electron mocks), `src/test-setup-renderer.ts` (electronAPI + jsdom polyfills).
+
+### Key Testing Conventions
+
+- Place test files next to their source files (e.g., `Foo.tsx` → `Foo.test.tsx`).
+- Mock the Anthropic SDK with a real class constructor, not `vi.fn().mockImplementation()`.
+- Use `waitFor()` for components that trigger async state updates on mount.
+- Use `getAllByText` when multiple elements share the same text content.
+- Use `getByAltText` (not `getByAlt`) for image alt text queries.
+- Add `Element.prototype.scrollIntoView = vi.fn()` in jsdom setup (already in `test-setup-renderer.ts`).
+- StaticServer tests share a single server instance to avoid port 3000 conflicts.
 
 ## Architecture Overview
 
@@ -144,17 +191,35 @@ Renderer accesses via `window.electronAPI` (exposed by preload script).
 ## Common Patterns
 
 ### Adding New Agent Tools
-1. Add tool definition to `getTools()` in `src/main/agent/tools/index.ts`
-2. Add execution logic to `executeToolCall()` switch statement
-3. Update system prompt if needed to explain tool usage
+1. **Write tests first** in `src/main/agent/tools/index.test.ts` — add cases for `getTools()` (verify the tool definition) and `executeToolCall()` (verify execution logic and edge cases).
+2. Add tool definition to `getTools()` in `src/main/agent/tools/index.ts`.
+3. Add execution logic to `executeToolCall()` switch statement.
+4. Update system prompt if needed to explain tool usage.
+5. Run `npm run test:unit` and verify all tests pass.
 
 ### Modifying System Prompts
-Edit `getSystemPrompt()` or `getModeSpecificPrompt()` in `src/main/agent/prompts.ts`. Remember: these prompts instruct the AI agent on how to generate CDN-compatible code.
+1. **Write tests first** in `src/main/agent/prompts.test.ts` — assert on the new content that should appear in the prompt output.
+2. Edit `getSystemPrompt()` or `getModeSpecificPrompt()` in `src/main/agent/prompts.ts`. Remember: these prompts instruct the AI agent on how to generate CDN-compatible code.
+3. Run `npm run test:unit` and verify all tests pass.
 
 ### Adding New Prototype Modes
-1. Add mode definition to `config/modes.yaml`
-2. Add corresponding case to `getModeSpecificPrompt()` in `prompts.ts`
-3. Mode affects agent behavior, mock data style, and default viewport
+1. **Write a test first** in `src/main/agent/prompts.test.ts` — add a case under "mode-specific prompts" asserting the new mode's key instructions.
+2. Add mode definition to `config/modes.yaml`.
+3. Add corresponding case to `getModeSpecificPrompt()` in `prompts.ts`.
+4. Mode affects agent behavior, mock data style, and default viewport.
+5. Run `npm run test:unit` and verify all tests pass.
+
+### Adding New React Components
+1. **Write a test file** alongside the component (e.g., `NewComponent.test.tsx`).
+2. Test rendering, user interactions, IPC listener registration/cleanup, and edge cases.
+3. Mock `window.electronAPI` methods as needed (already available via `test-setup-renderer.ts`).
+4. Run `npm run test:renderer` and verify all tests pass.
+
+### Adding New IPC Channels
+1. Add the channel to `IPCChannel` enum in `src/shared/types.ts`.
+2. **Write tests** for both the main-process handler and the renderer-side consumer.
+3. Update the preload bridge in `src/preload/index.ts`.
+4. Run `npm run test:unit && npm run test:renderer` and verify all tests pass.
 
 ## Build Tool
 
