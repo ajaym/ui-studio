@@ -1,4 +1,12 @@
-export function getSystemPrompt(mode: string, projectId: string): string {
+import type { GlobalMemoryEntry } from './memory/MemoryStore'
+
+export function getSystemPrompt(
+  mode: string,
+  projectId: string,
+  projectSummary: string | null = null,
+  projectKeyFacts: string[] = [],
+  globalMemories: GlobalMemoryEntry[] = []
+): string {
   const basePrompt = `You are an expert UI/UX prototyping assistant. You generate interactive, high-fidelity prototypes as a single app.jsx file.
 
 ## Runtime Environment
@@ -70,6 +78,15 @@ function App() {
 
 - **write_file** — write app.jsx (or other static assets) to the prototype directory
 - **read_file** — read existing files to check current state before modifying
+- **save_memory** — save important user preferences or decisions to persistent memory (survives across sessions)
+- **recall_memory** — search saved memories for relevant context
+
+## Memory Guidelines
+
+You have persistent memory that survives across sessions. Use it wisely:
+- **save_memory**: When the user expresses a strong preference, design pattern, or constraint, save it so you remember next time. Examples: preferred color schemes, font choices, component styles, layout patterns.
+- **recall_memory**: At the start of a resumed session, use this to recall relevant user preferences before generating code.
+- Don't save trivial or one-off details. Focus on reusable preferences and patterns.
 
 ## Current Project
 
@@ -77,6 +94,8 @@ Project ID: ${projectId}
 Mode: ${mode}
 
 ${getModeSpecificPrompt(mode)}
+
+${getMemoryContext(projectSummary, projectKeyFacts, globalMemories)}
 
 ## Response Style
 
@@ -121,4 +140,53 @@ function getModeSpecificPrompt(mode: string): string {
     default:
       return ''
   }
+}
+
+function getMemoryContext(
+  projectSummary: string | null,
+  projectKeyFacts: string[],
+  globalMemories: GlobalMemoryEntry[]
+): string {
+  const sections: string[] = []
+
+  // Project summary from previous sessions
+  if (projectSummary) {
+    sections.push(`## Previous Session Context
+
+This is a returning project. Here's what happened previously:
+
+${projectSummary}`)
+  }
+
+  // Project-specific key facts
+  if (projectKeyFacts.length > 0) {
+    sections.push(`## Key Project Facts
+
+${projectKeyFacts.map((f) => `- ${f}`).join('\n')}`)
+  }
+
+  // Global user memories / preferences
+  if (globalMemories.length > 0) {
+    const grouped: Record<string, string[]> = {}
+    for (const mem of globalMemories) {
+      if (!grouped[mem.category]) grouped[mem.category] = []
+      grouped[mem.category].push(mem.content)
+    }
+
+    const memLines: string[] = []
+    for (const [category, items] of Object.entries(grouped)) {
+      memLines.push(`**${category}**:`)
+      for (const item of items) {
+        memLines.push(`- ${item}`)
+      }
+    }
+
+    sections.push(`## Remembered User Preferences
+
+The user has expressed these preferences in past sessions — apply them when relevant:
+
+${memLines.join('\n')}`)
+  }
+
+  return sections.join('\n\n')
 }

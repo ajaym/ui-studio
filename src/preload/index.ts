@@ -10,6 +10,7 @@ import type {
   ProjectChangedPayload,
   ApiKeyStatus,
   ApiKeySetPayload,
+  LoadMessagesResult,
 } from '@shared/types'
 
 // Expose protected methods that allow the renderer process to use
@@ -94,6 +95,15 @@ const api = {
 
     set: (payload: ApiKeySetPayload): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke(IPCChannel.APIKEY_SET, payload),
+  },
+
+  // Memory API
+  memory: {
+    loadMessages: (projectId: string): Promise<LoadMessagesResult> =>
+      ipcRenderer.invoke(IPCChannel.MEMORY_LOAD_MESSAGES, projectId),
+
+    getGlobal: (): Promise<{ entries: Array<{ id: string; content: string; category: string; createdAt: number; source: string }>; lastUpdated: number }> =>
+      ipcRenderer.invoke(IPCChannel.MEMORY_GET_GLOBAL),
   },
 
 }

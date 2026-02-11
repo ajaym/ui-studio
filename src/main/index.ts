@@ -5,10 +5,12 @@ import { config as dotenvConfig } from 'dotenv'
 import { existsSync } from 'fs'
 import { IPCChannel } from '@shared/types'
 import { getAppDataDir, getSavedApiKey, saveApiKey, maskApiKey } from '@shared/constants'
-import type { ChatSendPayload, ModeChangePayload, ApiKeyStatus, ApiKeySetPayload } from '@shared/types'
+import type { ChatSendPayload, ModeChangePayload, ApiKeyStatus, ApiKeySetPayload, LoadMessagesResult } from '@shared/types'
 import { AgentService } from './agent/AgentService'
 import { ProjectManager } from './project/ProjectManager'
 import { StaticServer } from './preview/StaticServer'
+import { MemoryStore } from './agent/memory/MemoryStore'
+import { setMemoryStore } from './agent/tools'
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url)
@@ -31,6 +33,7 @@ let mainWindow: BrowserWindow | null = null
 let agentService: AgentService | null = null
 let projectManager: ProjectManager | null = null
 let staticServer: StaticServer | null = null
+let memoryStore: MemoryStore | null = null
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -87,6 +90,12 @@ app.on('window-all-closed', () => {
 })
 
 async function initializeServices() {
+  // Initialize memory store (before agent service, since agent depends on it)
+  memoryStore = new MemoryStore()
+
+  // Make memory store available to agent tools
+  setMemoryStore(memoryStore)
+
   // Initialize project manager
   projectManager = new ProjectManager()
 
@@ -99,8 +108,8 @@ async function initializeServices() {
     console.log('No API key found. Users can set it via Settings in the app.')
     // Continue anyway — the settings screen will prompt them
   } else {
-    agentService = new AgentService(apiKey)
-    console.log('Agent service initialized')
+    agentService = new AgentService(apiKey, memoryStore)
+    console.log('Agent service initialized with memory support')
   }
 }
 
@@ -185,7 +194,7 @@ function setupIPC() {
     const previewUrl = staticServer.start(project.path)
     console.log('Switched to project:', project.id, 'at', previewUrl)
 
-    // Re-initialize agent for this project
+    // Re-initialize agent for this project (loads memory from disk)
     if (agentService) {
       await agentService.initialize('rapid-prototype', project.id)
     }
@@ -219,6 +228,28 @@ function setupIPC() {
       project: null,
       previewUrl: null,
     })
+  })
+
+  // Memory handlers
+  ipcMain.handle(IPCChannel.MEMORY_LOAD_MESSAGES, async (_, projectId: string): Promise<LoadMessagesResult> => {
+    if (!memoryStore) {
+      return { messages: [], hasPreviousSession: false }
+    }
+
+    const memory = memoryStore.loadProjectMemory(projectId)
+    if (!memory || memory.chatMessages.length === 0) {
+      return { messages: [], hasPreviousSession: false }
+    }
+
+    return {
+      messages: memory.chatMessages,
+      hasPreviousSession: true,
+    }
+  })
+
+  ipcMain.handle(IPCChannel.MEMORY_GET_GLOBAL, async () => {
+    if (!memoryStore) return { entries: [], lastUpdated: 0 }
+    return memoryStore.loadGlobalMemory()
   })
 
   // Mode handlers (placeholder - not yet implemented)
@@ -267,7 +298,7 @@ function setupIPC() {
 
     // Save and reinitialize
     saveApiKey(apiKey.trim())
-    agentService = new AgentService(apiKey.trim())
+    agentService = new AgentService(apiKey.trim(), memoryStore!)
     console.log('Agent service reinitialized with new API key')
 
     return { success: true }

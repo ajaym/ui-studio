@@ -73,7 +73,7 @@ function App() {
       {/* Main content area */}
       <div className="flex-1 overflow-hidden">
         <SplitPane
-          left={<ChatPanel key={chatResetKey} onPreviewReady={setPreviewUrl} />}
+          left={<ChatPanel key={chatResetKey} onPreviewReady={setPreviewUrl} projectId={currentProject?.id ?? null} />}
           right={<PreviewPanel url={previewUrl} />}
           defaultSize={50}
         />

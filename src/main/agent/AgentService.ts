@@ -5,23 +5,49 @@ import type { Message, ChatStreamPayload } from '@shared/types'
 import { nanoid } from 'nanoid'
 import { getSystemPrompt } from './prompts'
 import { getTools, executeToolCall } from './tools'
+import { MemoryStore } from './memory/MemoryStore'
+
+/** Number of conversation turns after which we auto-generate a project summary. */
+const SUMMARY_THRESHOLD = 20
 
 export class AgentService {
   private client: Anthropic
   private conversationHistory: Anthropic.MessageParam[] = []
   private currentMode: string = 'rapid-prototype'
   private currentProjectId: string | null = null
+  private memoryStore: MemoryStore
+  private projectSummary: string | null = null
+  private projectKeyFacts: string[] = []
+  /** Chat messages tracked so we can persist them alongside API history. */
+  private chatMessages: Message[] = []
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, memoryStore: MemoryStore) {
     this.client = new Anthropic({
       apiKey,
     })
+    this.memoryStore = memoryStore
   }
 
   async initialize(mode: string, projectId: string) {
     this.currentMode = mode
     this.currentProjectId = projectId
-    this.conversationHistory = []
+
+    // Attempt to restore memory from disk
+    const memory = this.memoryStore.loadProjectMemory(projectId)
+    if (memory) {
+      this.conversationHistory = memory.conversationHistory
+      this.chatMessages = memory.chatMessages
+      this.projectSummary = memory.summary
+      this.projectKeyFacts = memory.keyFacts
+      console.log(
+        `Restored memory for project ${projectId}: ${this.conversationHistory.length} history entries, ${this.chatMessages.length} chat messages`
+      )
+    } else {
+      this.conversationHistory = []
+      this.chatMessages = []
+      this.projectSummary = null
+      this.projectKeyFacts = []
+    }
   }
 
   async sendMessage(userMessage: string, images?: { data: string; mimeType: string }[]) {
@@ -57,11 +83,26 @@ export class AgentService {
       content,
     })
 
+    // Track user chat message for persistence
+    this.chatMessages.push({
+      id: nanoid(),
+      role: 'user',
+      content: userMessage,
+      timestamp: Date.now(),
+    })
+
     try {
       const messageId = nanoid()
 
-      // Get system prompt
-      const systemPrompt = getSystemPrompt(this.currentMode, this.currentProjectId || '')
+      // Get system prompt (now includes memory context)
+      const globalMemory = this.memoryStore.loadGlobalMemory()
+      const systemPrompt = getSystemPrompt(
+        this.currentMode,
+        this.currentProjectId || '',
+        this.projectSummary,
+        this.projectKeyFacts,
+        globalMemory.entries
+      )
 
       // Agentic loop - keep calling until no more tool use
       let continueLoop = true
@@ -87,7 +128,9 @@ export class AgentService {
         })
 
         // Check if there are tool uses
-        const toolUses = response.content.filter((block) => block.type === 'tool_use')
+        const toolUses = response.content.filter(
+          (block: Anthropic.ContentBlock) => block.type === 'tool_use'
+        )
 
         if (toolUses.length === 0) {
           // No tool uses, extract text and finish
@@ -155,6 +198,30 @@ export class AgentService {
         }
       }
 
+      // Collect the full assistant text from the conversation history for persistence
+      let fullAssistantText = ''
+      for (let i = this.conversationHistory.length - 1; i >= 0; i--) {
+        const entry = this.conversationHistory[i]
+        if (entry.role === 'assistant' && Array.isArray(entry.content)) {
+          for (const block of entry.content) {
+            if ('type' in block && block.type === 'text') {
+              fullAssistantText = (block as Anthropic.TextBlock).text + '\n' + fullAssistantText
+            }
+          }
+        } else if (entry.role === 'user') {
+          // Stop at the last user message (the one we just sent)
+          break
+        }
+      }
+      if (fullAssistantText.trim()) {
+        this.chatMessages.push({
+          id: messageId,
+          role: 'assistant',
+          content: fullAssistantText.trim(),
+          timestamp: Date.now(),
+        })
+      }
+
       // Send completion
       const payload: ChatStreamPayload = {
         messageId,
@@ -165,6 +232,19 @@ export class AgentService {
 
       // Trigger preview reload after response
       mainWindow.webContents.send(IPCChannel.PREVIEW_RELOAD)
+
+      // Persist memory after each turn
+      this.persistMemory()
+
+      // Auto-generate summary if history is getting long
+      if (
+        this.conversationHistory.length >= SUMMARY_THRESHOLD &&
+        !this.projectSummary
+      ) {
+        this.generateProjectSummary().catch((err) =>
+          console.error('Failed to generate project summary:', err)
+        )
+      }
     } catch (error) {
       console.error('Agent error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -197,9 +277,82 @@ export class AgentService {
 
   clearHistory() {
     this.conversationHistory = []
+    this.chatMessages = []
+    this.projectSummary = null
+    this.projectKeyFacts = []
   }
 
   getHistory(): Anthropic.MessageParam[] {
     return this.conversationHistory
+  }
+
+  getChatMessages(): Message[] {
+    return this.chatMessages
+  }
+
+  setChatMessages(messages: Message[]) {
+    this.chatMessages = messages
+  }
+
+  getMemoryStore(): MemoryStore {
+    return this.memoryStore
+  }
+
+  // ---- Private helpers ----
+
+  private persistMemory(): void {
+    if (!this.currentProjectId) return
+
+    this.memoryStore.saveProjectMemory(
+      this.currentProjectId,
+      this.conversationHistory,
+      this.chatMessages,
+      this.projectSummary,
+      this.projectKeyFacts
+    )
+  }
+
+  private async generateProjectSummary(): Promise<void> {
+    try {
+      // Build a condensed version of the conversation for summarization
+      const historyText = this.conversationHistory
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .slice(0, 20) // First 20 turns for summary
+        .map((m) => {
+          if (typeof m.content === 'string') return m.content
+          if (Array.isArray(m.content)) {
+            return (m.content as Anthropic.ContentBlock[])
+              .filter((b: Anthropic.ContentBlock): b is Anthropic.TextBlock => b.type === 'text')
+              .map((b: Anthropic.TextBlock) => b.text)
+              .join(' ')
+          }
+          return ''
+        })
+        .filter(Boolean)
+        .join('\n---\n')
+
+      const response = await this.client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 500,
+        messages: [
+          {
+            role: 'user',
+            content: `Summarize this prototype development conversation in 2-3 sentences. Focus on: what was built, key design decisions, and the current state of the prototype.\n\n${historyText}`,
+          },
+        ],
+      })
+
+      const text = response.content[0]
+      if (text.type === 'text') {
+        const summary = text.text.trim()
+        this.projectSummary = summary
+        if (this.currentProjectId) {
+          this.memoryStore.updateProjectSummary(this.currentProjectId, summary)
+        }
+        console.log('Generated project summary:', this.projectSummary)
+      }
+    } catch (error) {
+      console.error('Failed to generate project summary:', error)
+    }
   }
 }

@@ -8,6 +8,8 @@ import type {
   ProjectChangedPayload,
   ApiKeyStatus,
   ApiKeySetPayload,
+  LoadMessagesResult,
+  MemoryEntry,
 } from '@shared/types'
 
 export interface ElectronAPI {
@@ -35,6 +37,10 @@ export interface ElectronAPI {
   apiKey: {
     getStatus: () => Promise<ApiKeyStatus>
     set: (payload: ApiKeySetPayload) => Promise<{ success: boolean; error?: string }>
+  }
+  memory: {
+    loadMessages: (projectId: string) => Promise<LoadMessagesResult>
+    getGlobal: () => Promise<{ entries: MemoryEntry[]; lastUpdated: number }>
   }
 }
 

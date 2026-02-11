@@ -67,6 +67,9 @@ export enum IPCChannel {
 
   APIKEY_SET = 'apikey:set',
   APIKEY_STATUS = 'apikey:status',
+
+  MEMORY_LOAD_MESSAGES = 'memory:load-messages',
+  MEMORY_GET_GLOBAL = 'memory:get-global',
 }
 
 // IPC payload types
@@ -101,4 +104,18 @@ export interface ApiKeyStatus {
 
 export interface ApiKeySetPayload {
   apiKey: string
+}
+
+// Memory types
+export interface MemoryEntry {
+  id: string
+  content: string
+  category: 'preference' | 'pattern' | 'style' | 'constraint'
+  createdAt: number
+  source: string
+}
+
+export interface LoadMessagesResult {
+  messages: Message[]
+  hasPreviousSession: boolean
 }

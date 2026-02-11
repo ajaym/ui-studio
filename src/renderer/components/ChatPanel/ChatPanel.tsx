@@ -6,11 +6,30 @@ import type { Message, Attachment } from '@shared/types'
 
 interface ChatPanelProps {
   onPreviewReady: (url: string) => void
+  projectId: string | null
 }
 
-export default function ChatPanel({ onPreviewReady }: ChatPanelProps) {
+export default function ChatPanel({ onPreviewReady, projectId }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [hasRestoredSession, setHasRestoredSession] = useState(false)
+
+  // Load saved messages when opening a project with existing memory
+  useEffect(() => {
+    if (!projectId) {
+      setHasRestoredSession(false)
+      return
+    }
+
+    window.electronAPI.memory.loadMessages(projectId).then((result) => {
+      if (result.hasPreviousSession && result.messages.length > 0) {
+        setMessages(result.messages)
+        setHasRestoredSession(true)
+      }
+    }).catch((err) => {
+      console.error('Failed to load saved messages:', err)
+    })
+  }, [projectId])
 
   useEffect(() => {
     // Listen for incoming messages from main process
@@ -98,6 +117,17 @@ export default function ChatPanel({ onPreviewReady }: ChatPanelProps) {
 
   return (
     <div className="h-full flex flex-col bg-white">
+      {/* Restored session indicator */}
+      {hasRestoredSession && (
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100 text-sm text-blue-700 flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 1v6l3 3" />
+            <circle cx="8" cy="8" r="7" />
+          </svg>
+          Previous session restored
+        </div>
+      )}
+
       {/* Messages area */}
       <div className="flex-1 overflow-hidden">
         <MessageList messages={messages} isLoading={isLoading} />
