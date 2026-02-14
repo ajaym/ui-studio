@@ -25,6 +25,8 @@ export ANTHROPIC_API_KEY=your_key_here  # Required for agent functionality
 
 ## Testing Policy
 
+**First step in every session: run all tests.** Before making any changes, run `npm run test:unit && npm run test:renderer` to establish a green baseline. If any tests fail, fix them before proceeding with new work. This ensures you are starting from a known-good state and can detect regressions caused by your changes.
+
 **Tests are mandatory for every change.** All unit and renderer tests must pass before any code is considered complete. Run `npm run test:unit && npm run test:renderer` to verify.
 
 ### Test-Driven Development (TDD) for Features
